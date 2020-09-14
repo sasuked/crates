@@ -1,0 +1,57 @@
+admin_permission: "crates.admin"
+
+earn_item:
+  titles:
+    enable: true
+    title: ""
+    subtitle: ""
+  messages:
+    enable: true
+    message: "&aVocê ganhou &f{amount]x {name}&a na crate que você abriu."
+
+messages:
+  no_perm: "&cVocê não possui permissão para executar esse comando."
+  no_key: "&cVocê não está com a chave certa para abrir essa crate."
+
+crates:
+  normal:
+    key:
+      type: 131
+      enchantments:
+        - "DAMAGE_ALL:2"
+      name: "&aChave de crate"
+      lore:
+        - ""
+        - "&7Use esta chave para abrir uma crate"
+        - "&7e ganhar recompensas hiper legais!"
+        - ""
+        - "&7Tipo: &fNormal"
+        - "&7Raridade: &6*&7****"
+        - ""
+    block:
+      type: 130
+      hologram:
+        - "&8&lNORMAL CRATE"
+        - "&7(Raridade: &6*&7****)"
+        - ""
+        - "&7Clique com o botão &fdireito&7 para abrir."
+        - "&7Clique com o botão &fesquerdo&7 para visualizar o conteúdo."
+        - ""
+    itens:
+      0:
+        type: 1
+        amount: 1
+        name: "&aPedra fodastica"
+        percentage: 10
+        lore:
+          - "&7Item ganhado na crate básica"
+      1:
+        type: 137
+        amount: 1
+        name: "&aTesouro"
+        percentage: 5
+        lore:
+          - "&7Item ganhado na crate básica"
+        commands:
+          - "say {player} ganhou um tesouro"
+          - "say {player} gg"

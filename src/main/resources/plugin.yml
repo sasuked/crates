@@ -1,0 +1,5 @@
+main: net.stoonegomes.crates.StrixCrates
+name: Crates
+version: 1.0-SNAPSHOT
+
+depend: [HolographicDisplays]
