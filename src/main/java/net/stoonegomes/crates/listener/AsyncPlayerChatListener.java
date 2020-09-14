@@ -63,7 +63,7 @@ public class AsyncPlayerChatListener implements Listener {
                 break;
             }
             case 2: {
-                if (message.equalsIgnoreCase("não")) {
+                if (message.equalsIgnoreCase("no")) {
                     crateItemProcess.nextTier();
 
                     player.sendMessage(new String[]{
