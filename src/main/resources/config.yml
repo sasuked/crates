@@ -1,18 +1,5 @@
 admin_permission: "crates.admin"
 
-earn_item:
-  titles:
-    enable: true
-    title: ""
-    subtitle: ""
-  messages:
-    enable: true
-    message: "&aVocê ganhou &f{amount]x {name}&a na crate que você abriu."
-
-messages:
-  no_perm: "&cVocê não possui permissão para executar esse comando."
-  no_key: "&cVocê não está com a chave certa para abrir essa crate."
-
 crates:
   normal:
     key:

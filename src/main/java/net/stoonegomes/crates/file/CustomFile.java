@@ -1,4 +1,4 @@
-package net.stoonegomes.crates.util;
+package net.stoonegomes.crates.file;
 
 import net.stoonegomes.crates.StrixCrates;
 import org.bukkit.configuration.file.FileConfiguration;

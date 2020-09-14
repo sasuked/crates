@@ -1,6 +1,7 @@
 package net.stoonegomes.crates.commands.impl;
 
 import net.stoonegomes.crates.StrixCrates;
+import net.stoonegomes.crates.cache.impl.CrateCache;
 import net.stoonegomes.crates.commands.Command;
 import net.stoonegomes.crates.entity.Crate;
 import org.bukkit.command.CommandSender;
@@ -8,6 +9,7 @@ import org.bukkit.command.CommandSender;
 public class CrateCommand extends Command {
 
     private final StrixCrates strixCrates = StrixCrates.getInstance();
+    private final CrateCache crateCache = CrateCache.getInstance();
 
     public CrateCommand() {
         super("crate", "crates");
@@ -15,61 +17,50 @@ public class CrateCommand extends Command {
 
     @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
-        if (!sender.hasPermission(strixCrates.getConfig().getString("admin_permission"))) {
-            String message = strixCrates.getConfig().getString("messages.no_perm").replace("&", "§");
-            sender.sendMessage(message);
+        if (!sender.hasPermission("crates.admin")) {
+            sender.sendMessage("§cNo permission.");
             return true;
         }
 
-        if (args.length == 0) {
+        if (args.length == 0 || !args[0].equalsIgnoreCase("reload")) {
             sender.sendMessage(new String[]{
                 "",
                 "§6§lCRATES",
                 "",
-                "§7/crates reload §8- §7Reinicia a configuração.",
-                "§7/givekey <jogador> <tipo> <quantia> §8- §7Dá uma key a um jogador.",
-                "§7/spawncrate <tipo> §8- §7Spawna uma crate.",
+                "§7/crates reload §8- §7Reload the crates.",
+                "§7/givekey <player> <id> <amount> §8- §7Give a key to someone.",
+                "§7/spawncrate <id> §8- §7Spawn a crate.",
                 ""
             });
             return true;
         }
 
-        if ("reload".equals(args[0].toLowerCase())) {
+        if (args[0].equalsIgnoreCase("reload")) {
             strixCrates.reloadConfig();
 
             sender.sendMessage(new String[]{
                 "",
                 "§6§lCRATES",
                 "",
-                "§7Iniciando reinicio geral das crates...",
+                "§7Starting general crate reloading...",
             });
 
-            for (Crate crate : strixCrates.getCrateCache().getValues()) {
+            for (Crate crate : crateCache.getValues()) {
                 if (crate.getBlockHologram() != null) crate.getBlockHologram().delete();
-                sender.sendMessage("§6* §7Foi limpo o holograma da crate §f" + crate.getName() + "§7.");
+                sender.sendMessage("§6* §7Was cleared the §f" + crate.getName() + "§7 hologram.");
             }
 
             sender.sendMessage(new String[]{
                 "",
-                "§7Iniciando carregamento das crates...",
+                "§7Starting crates load...",
                 ""
             });
 
-            strixCrates.getCrateCache().load();
+            crateCache.load();
 
             sender.sendMessage(new String[]{
-                "§7Você reiniciou os arquivos de configuração com sucesso.",
-                "§7Foram carregadas §f" + strixCrates.getCrateCache().size() + "§7 crates.",
-                ""
-            });
-        } else {
-            sender.sendMessage(new String[]{
-                "",
-                "§6§lCRATES",
-                "",
-                "§7/crates reload §8- §7Reinicia a configuração.",
-                "§7/givekey <jogador> <tipo> <quantia> §8- §7Dá uma key a um jogador.",
-                "§7/spawncrate <tipo> §8- §7Spawna uma crate.",
+                "§7You reloaded the crates successfully.",
+                "§7Was load §f" + crateCache.size() + "§7 crates.",
                 ""
             });
         }

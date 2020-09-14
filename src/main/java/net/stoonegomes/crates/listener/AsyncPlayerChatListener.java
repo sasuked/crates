@@ -1,22 +1,20 @@
 package net.stoonegomes.crates.listener;
 
 import net.stoonegomes.crates.StrixCrates;
+import net.stoonegomes.crates.builder.ItemBuilder;
+import net.stoonegomes.crates.cache.impl.ProcessItemCrateCache;
 import net.stoonegomes.crates.entity.Crate;
-import net.stoonegomes.crates.entity.CrateItem;
 import net.stoonegomes.crates.entity.process.CrateItemProcess;
-import net.stoonegomes.crates.inventory.ScrollerInventory;
+import net.stoonegomes.crates.helper.CrateHelper;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class AsyncPlayerChatListener implements Listener {
 
-    private final StrixCrates strixCrates = StrixCrates.getInstance();
+    private final CrateHelper crateHelper = CrateHelper.getInstance();
+    private final ProcessItemCrateCache processItemCrateCache = ProcessItemCrateCache.getInstance();
 
     public AsyncPlayerChatListener(StrixCrates strixCrates) {
         strixCrates.getServer().getPluginManager().registerEvents(this, strixCrates);
@@ -27,16 +25,16 @@ public class AsyncPlayerChatListener implements Listener {
         Player player = event.getPlayer();
         String message = event.getMessage();
 
-        CrateItemProcess crateItemProcess = strixCrates.getProcessItemCrateCache().getElement(player.getUniqueId());
+        CrateItemProcess crateItemProcess = processItemCrateCache.getElement(player.getUniqueId());
         if (crateItemProcess == null) return;
 
         event.setCancelled(true);
         switch (crateItemProcess.getTier()) {
             case 1: {
-                if (message.equalsIgnoreCase("cancelar")) {
-                    player.sendMessage("§cVocê cancelou o processo.");
+                if (message.equalsIgnoreCase("cancel")) {
+                    player.sendMessage("§cYou cancelled the process.");
 
-                    strixCrates.getProcessItemCrateCache().removeElement(player.getUniqueId());
+                    processItemCrateCache.removeElement(player.getUniqueId());
                     return;
                 }
 
@@ -44,26 +42,24 @@ public class AsyncPlayerChatListener implements Listener {
                 try {
                     percent = Integer.parseInt(event.getMessage());
                 } catch (NumberFormatException exception) {
-                    player.sendMessage("§cVocê precisa digitar um número válido como porcentagem.");
+                    player.sendMessage("§cYou need to use an valid number to percent.");
                     return;
                 }
 
                 if (percent > 100) {
-                    player.sendMessage("§cA porcentagem de ganho deve ser até o número §f100§c apenas.");
+                    player.sendMessage("§cThe percentage should only be up to 100");
                     return;
                 }
 
                 player.sendMessage(new String[]{
                     "",
-                    "§aVocê deseja adicionar algum comando? (Atuais: §f0§a)",
-                    "§7(Digite 'não' caso você queira finalizar o processo)",
+                    "§aDo you need to add a command? (Current: §f0§a)",
+                    "§7(Type 'no' when you want to go to the next process)",
                     ""
                 });
 
                 crateItemProcess.nextTier();
                 crateItemProcess.getCrateItem().setPercent(percent);
-
-                strixCrates.getProcessItemCrateCache().putElement(player.getUniqueId(), crateItemProcess);
                 break;
             }
             case 2: {
@@ -72,8 +68,8 @@ public class AsyncPlayerChatListener implements Listener {
 
                     player.sendMessage(new String[]{
                         "",
-                        "§aEsse item precisa ser enviado ao inventário do jogador?",
-                        "§7(Responda com 'sim' ou 'não' para finalizar o processo)",
+                        "§aThe item should go to player inventory?",
+                        "§7(Reply with 'yes' or 'no' to finalize the process)",
                         ""
                     });
                     return;
@@ -83,38 +79,29 @@ public class AsyncPlayerChatListener implements Listener {
 
                 player.sendMessage(new String[]{
                     "",
-                    "§aVocê deseja adicionar algum comando? (Atuais: §f" + crateItemProcess.getCrateItem().getCommands().size() + "§a)",
-                    "§7(Digite 'não' caso você queira finalizar o processo)",
+                    "§aDo you need to add a command? (Current: §f" + crateItemProcess.getCrateItem().getCommands().size() + "§a)",
+                    "§7(Type 'no' when you want to go to the next process)",
                     ""
                 });
                 break;
             }
             case 3: {
-                if (!message.equalsIgnoreCase("sim") && !message.equalsIgnoreCase("não")) {
-                    player.sendMessage("§cResponda apenas com §f'sim'§c ou §f'não'§c.");
+                if (!message.equalsIgnoreCase("yes") && !message.equalsIgnoreCase("no")) {
+                    player.sendMessage("§cReply only with 'yes' or 'no'§c.");
                     return;
                 }
 
-                boolean isGiveItem = message.equalsIgnoreCase("sim");
+                boolean isGiveItem = message.equalsIgnoreCase("yes");
                 crateItemProcess.getCrateItem().setGiveItem(isGiveItem);
 
-                player.sendMessage("§aYay! O item foi adicionado a esta crate com essas informações.");
-
-                CrateItem newItem = crateItemProcess.getCrateItem();
                 Crate crate = crateItemProcess.getCrate();
+                crate.addItem(crateItemProcess.getCrateItem());
 
-                crateItemProcess.getCrate().getItems().add(newItem);
+                crateHelper.saveItemStack(crate.getName(), crateItemProcess.getCrateItem());
+                crateHelper.openContentsInventory(crate, player);
 
-                strixCrates.getCrateHelper().saveItemStack(crate.getName(), newItem);
-                strixCrates.getProcessItemCrateCache().removeElement(player.getUniqueId());
-
-                List<ItemStack> items = new ArrayList<>();
-                for (CrateItem crateItem : crate.getItems()) {
-                    items.add(crateItem.getItemStack());
-                }
-
-                ScrollerInventory scrollerInventory = new ScrollerInventory(player, "Conteúdo da crate", items, crate);
-                scrollerInventory.open();
+                processItemCrateCache.removeElement(player.getUniqueId());
+                player.sendMessage("§aYay! The item was added to the crate.");
                 break;
             }
         }

@@ -8,11 +8,14 @@ import net.stoonegomes.crates.StrixCrates;
 import net.stoonegomes.crates.builder.ItemBuilder;
 import net.stoonegomes.crates.entity.Crate;
 import net.stoonegomes.crates.entity.CrateItem;
+import net.stoonegomes.crates.inventory.item.ClickableItem;
+import net.stoonegomes.crates.inventory.scroller.ContentsInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -24,10 +27,33 @@ import java.util.Set;
 
 public class CrateHelper {
 
-    private StrixCrates strixCrates;
+    private static CrateHelper instance;
 
-    public CrateHelper(StrixCrates strixCrates) {
-        this.strixCrates = strixCrates;
+    public static CrateHelper getInstance() {
+        if (instance == null) instance = new CrateHelper();
+        return instance;
+    }
+
+    private final StrixCrates strixCrates = StrixCrates.getInstance();
+
+    public void openContentsInventory(Crate crate, Player player) {
+        List<ClickableItem> clickableItems = new ArrayList<>();
+        for (CrateItem crateItem : crate.getItems()) {
+            clickableItems.add(ClickableItem.builder()
+                .itemStack(crateItem.getItemStack())
+                .eventConsumer((clickEvent) -> {
+                    if (!player.hasPermission("crates.admin")) return;
+
+                    crate.removeItem(crateItem);
+
+                    player.closeInventory();
+                    player.sendMessage("§cYou removed this item from that crate.");
+                })
+                .build());
+        }
+
+        ContentsInventory contentsInventory = new ContentsInventory(clickableItems, "Crate contents", crate);
+        contentsInventory.open(player);
     }
 
     public ItemStack getKeyToCrate(Crate crate, int amount) {

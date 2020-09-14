@@ -7,8 +7,11 @@ import java.util.UUID;
 
 public class ProcessItemCrateCache extends Cache<UUID, CrateItemProcess> {
 
-    /*
-    Nothing
-     */
+    private static ProcessItemCrateCache instance;
+
+    public static ProcessItemCrateCache getInstance() {
+        if (instance == null) instance = new ProcessItemCrateCache();
+        return instance;
+    }
 
 }

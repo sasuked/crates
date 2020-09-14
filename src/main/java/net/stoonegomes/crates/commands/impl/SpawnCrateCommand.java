@@ -1,8 +1,10 @@
 package net.stoonegomes.crates.commands.impl;
 
 import net.stoonegomes.crates.StrixCrates;
+import net.stoonegomes.crates.cache.impl.CrateCache;
 import net.stoonegomes.crates.commands.Command;
 import net.stoonegomes.crates.entity.Crate;
+import net.stoonegomes.crates.helper.CrateHelper;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -16,6 +18,9 @@ public class SpawnCrateCommand extends Command {
 
     private final StrixCrates strixCrates = StrixCrates.getInstance();
 
+    private final CrateCache crateCache = CrateCache.getInstance();
+    private final CrateHelper crateHelper = CrateHelper.getInstance();
+
     public SpawnCrateCommand() {
         super("spawncrate", "definircrate");
     }
@@ -25,20 +30,19 @@ public class SpawnCrateCommand extends Command {
         if (!(sender instanceof Player)) return true;
         Player player = (Player) sender;
 
-        if (!player.hasPermission(strixCrates.getConfig().getString("admin_permission"))) {
-            String message = strixCrates.getConfig().getString("messages.no_perm").replace("&", "§");
-            sender.sendMessage(message);
+        if (!player.hasPermission("crates.admin")) {
+            sender.sendMessage("§cNo permission.");
             return true;
         }
 
         if (args.length == 0) {
-            player.sendMessage("§cPara definir o local de uma crate use §f/definircrate <crate>§c no local desejado.");
+            player.sendMessage("§cTo spawn a crate use §f/spawncrate <id>§c.");
             return true;
         }
 
-        Crate crate = strixCrates.getCrateCache().getElement(args[0].toLowerCase());
+        Crate crate = crateCache.getElement(args[0].toLowerCase());
         if (crate == null) {
-            player.sendMessage("§cA crate digitada não foi encontrada.");
+            player.sendMessage("§cThe typed crate wasn't found.");
             return true;
         }
 
@@ -61,14 +65,13 @@ public class SpawnCrateCommand extends Command {
             }
         }
         blockState.update(true);
-
         crate.setLocation(block.getLocation());
 
-        strixCrates.getCrateHelper().spawnHologram(block.getLocation(), crate);
-        strixCrates.getCrateHelper().setCrateLocation(crate.getName(), block.getLocation());
-        strixCrates.getCrateCache().putElement(crate.getName().toLowerCase(), crate);
+        crateHelper.spawnHologram(block.getLocation(), crate);
+        crateHelper.setCrateLocation(crate.getName(), block.getLocation());
+        crateCache.putElement(crate.getName().toLowerCase(), crate);
 
-        player.sendMessage("§aVocê spawnou a crate §f" + crate.getName() + "§a com sucesso.");
+        player.sendMessage("§aYou spawned the crate §f" + crate.getName().toLowerCase() + "§a successfuly.");
         return false;
     }
 

@@ -20,4 +20,8 @@ public class Crate {
     private Material blockType;
     private Hologram blockHologram;
 
+    public void addItem(CrateItem crateItem) { items.add(crateItem); }
+
+    public void removeItem(CrateItem crateItem) { items.remove(crateItem); }
+
 }

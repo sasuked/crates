@@ -1,30 +1,32 @@
 package net.stoonegomes.crates.commands.impl;
 
 import net.stoonegomes.crates.StrixCrates;
+import net.stoonegomes.crates.cache.impl.CrateCache;
 import net.stoonegomes.crates.commands.Command;
 import net.stoonegomes.crates.entity.Crate;
+import net.stoonegomes.crates.helper.CrateHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class GiveKeyCommand extends Command {
 
-    private final StrixCrates strixCrates = StrixCrates.getInstance();
+    private final CrateCache crateCache = CrateCache.getInstance();
+    private final CrateHelper crateHelper = CrateHelper.getInstance();
 
     public GiveKeyCommand() {
-        super("givekey", "darkey");
+        super("givekey");
     }
 
     @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
-        if (!sender.hasPermission(strixCrates.getConfig().getString("admin_permission"))) {
-            String message = strixCrates.getConfig().getString("messages.no_perm").replace("&", "§");
-            sender.sendMessage(message);
+        if (!sender.hasPermission("crates.admin")) {
+            sender.sendMessage("§cNo permission.");
             return true;
         }
 
         if (args.length <= 2) {
-            sender.sendMessage("§cPara dar uma chave a alguém use §f/givekey <player> <tipo> <quantia>§c.");
+            sender.sendMessage("§cTo give an crate key to someone use §f/givekey <player> <id> <amount>§c.");
             return true;
         }
 
@@ -34,9 +36,9 @@ public class GiveKeyCommand extends Command {
             return true;
         }
 
-        Crate crate = strixCrates.getCrateCache().getElement(args[1].toLowerCase());
+        Crate crate = crateCache.getElement(args[1].toLowerCase());
         if (crate == null) {
-            sender.sendMessage("§cA crate digitada não existe.");
+            sender.sendMessage("§cThe typed crate wasn't found.");
             return true;
         }
 
@@ -44,18 +46,14 @@ public class GiveKeyCommand extends Command {
         try {
             amount = Integer.parseInt(args[2]);
         } catch (NumberFormatException exception) {
-            sender.sendMessage("§cA quantia digitada precisa ser um número válido.");
+            sender.sendMessage("§cThe amount must be a valid number.");
             return true;
         }
 
-        if (checkIfInventoryIsFull(target)) {
-            target.getWorld().dropItem(target.getLocation(), strixCrates.getCrateHelper().getKeyToCrate(crate, amount));
-        } else target.getInventory().addItem(strixCrates.getCrateHelper().getKeyToCrate(crate, amount));
+        if (target.getInventory().firstEmpty() == -1) {
+            target.getWorld().dropItem(target.getLocation(), crateHelper.getKeyToCrate(crate, amount));
+        } else target.getInventory().addItem(crateHelper.getKeyToCrate(crate, amount));
         return false;
-    }
-
-    public boolean checkIfInventoryIsFull(Player player) {
-        return player.getInventory().firstEmpty() == -1;
     }
 
 }

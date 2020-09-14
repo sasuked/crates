@@ -2,13 +2,22 @@ package net.stoonegomes.crates.cache.impl;
 
 import net.stoonegomes.crates.cache.Cache;
 import net.stoonegomes.crates.entity.Crate;
+import net.stoonegomes.crates.helper.CrateHelper;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
 public class CrateCache extends Cache<String, Crate> {
+
+    private static CrateCache instance;
+
+    public static CrateCache getInstance() {
+        if (instance == null) instance = new CrateCache();
+        return instance;
+    }
+
+    private final CrateHelper crateHelper = CrateHelper.getInstance();
 
     public void load() {
         ConfigurationSection section = strixCrates.getConfig().getConfigurationSection("crates");
@@ -23,14 +32,14 @@ public class CrateCache extends Cache<String, Crate> {
 
             Crate crate = Crate.builder()
                 .name(string)
-                .location(strixCrates.getCrateHelper().getCrateLocation(string))
-                .items(strixCrates.getCrateHelper().getCrateItems(string))
+                .location(crateHelper.getCrateLocation(string))
+                .items(crateHelper.getCrateItems(string))
                 .blockType(blockMaterial)
                 .build();
 
-            Location location = strixCrates.getCrateHelper().getCrateLocation(crate.getName());
+            Location location = crateHelper.getCrateLocation(crate.getName());
 
-            if (location != null) strixCrates.getCrateHelper().spawnHologram(location, crate);
+            if (location != null) crateHelper.spawnHologram(location, crate);
             else crate.setBlockHologram(null);
 
             putElement(string, crate);

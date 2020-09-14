@@ -1,11 +1,11 @@
 package net.stoonegomes.crates.listener;
 
 import net.stoonegomes.crates.StrixCrates;
+import net.stoonegomes.crates.cache.impl.CrateCache;
 import net.stoonegomes.crates.entity.Crate;
 import net.stoonegomes.crates.entity.CrateItem;
-import net.stoonegomes.crates.inventory.ScrollerInventory;
+import net.stoonegomes.crates.helper.CrateHelper;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -13,17 +13,17 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 public class PlayerInteractListener implements Listener {
 
+    private final CrateHelper crateHelper = CrateHelper.getInstance();
+    private final CrateCache crateCache = CrateCache.getInstance();
+
     private final StrixCrates strixCrates = StrixCrates.getInstance();
 
-    public PlayerInteractListener(StrixCrates strixCrates) {
+    public PlayerInteractListener() {
         strixCrates.getServer().getPluginManager().registerEvents(this, strixCrates);
     }
 
@@ -34,7 +34,7 @@ public class PlayerInteractListener implements Listener {
         Block block = event.getClickedBlock();
         if (block == null) return;
 
-        Crate crate = strixCrates.getCrateCache().getElement($ -> $.getLocation() != null && $.getLocation().equals(block.getLocation()));
+        Crate crate = crateCache.getElement($ -> $.getLocation() != null && $.getLocation().equals(block.getLocation()));
         if (crate == null) return;
 
         event.setCancelled(true);
@@ -44,7 +44,7 @@ public class PlayerInteractListener implements Listener {
                 break;
             }
             case LEFT_CLICK_BLOCK: {
-                if (player.hasPermission(strixCrates.getConfig().getString("admin_permission"))) {
+                if (player.hasPermission("crates.admin")) {
                     if (player.isSneaking()) {
                         block.setType(Material.AIR);
 
@@ -54,27 +54,20 @@ public class PlayerInteractListener implements Listener {
                         strixCrates.getLocationsFile().getConfig().set("locations." + crate.getName(), null);
                         crate.setLocation(null);
 
-                        strixCrates.getCrateCache().putElement(crate.getName(), crate);
+                        crateCache.putElement(crate.getName(), crate);
                         return;
                     }
                 }
 
-                List<ItemStack> items = new ArrayList<>();
-                for (CrateItem crateItem : crate.getItems()) {
-                    items.add(crateItem.getItemStack());
-                }
-
-                ScrollerInventory scrollerInventory = new ScrollerInventory(player, "Conteúdo da crate", items, crate);
-                scrollerInventory.open();
+                crateHelper.openContentsInventory(crate, player);
                 break;
             }
             case RIGHT_CLICK_BLOCK: {
                 ItemStack itemStack = player.getItemInHand();
-                if (itemStack == null || !strixCrates.getCrateHelper().isKeyToCrate(itemStack, crate)) {
-                    player.sendMessage("§cPara abrir uma crate você precisa estar segurando uma chave válida.");
+                if (itemStack == null || !crateHelper.isKeyToCrate(itemStack, crate)) {
+                    player.sendMessage("§cTo open that crate do you need to hold an valid key.");
                     return;
                 }
-
 
                 CrateItem finalCrateItem = null;
                 for (CrateItem crateItem : crate.getItems()) {
@@ -85,61 +78,19 @@ public class PlayerInteractListener implements Listener {
 
                 if (finalCrateItem.getCommands() != null)
                     finalCrateItem.getCommands().forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("{player}", player.getName())));
-                if (finalCrateItem.isGiveItem()) {
-                    if (checkIfInventoryIsFull(player)) {
+                else if (finalCrateItem.isGiveItem()) {
+                    if (player.getInventory().firstEmpty() == -1) {
                         player.getWorld().dropItem(player.getLocation(), finalCrateItem.getItemStack());
                     } else player.getInventory().addItem(finalCrateItem.getItemStack());
                 }
 
-                sendMessages(player, finalCrateItem);
+                player.sendMessage("§aYou earned §f" + finalCrateItem.getItemStack().getAmount() + "x items on that crate.");
 
                 if (player.getItemInHand().getAmount() == 1) player.setItemInHand(null);
                 else player.getItemInHand().setAmount(player.getItemInHand().getAmount() - 1);
                 break;
             }
         }
-    }
-
-    public void sendMessages(Player player, CrateItem crateItem) {
-        if (strixCrates.getConfig().getBoolean("earn_item.titles.enable")) {
-            ItemStack itemStack = crateItem.getItemStack();
-            ItemMeta itemMeta = itemStack.getItemMeta();
-
-            String name = ChatColor.stripColor(crateItem.getItemStack().getItemMeta().getDisplayName());
-
-            String title = strixCrates.getConfig().getString("earn_item.titles.title")
-                .replace("&", "§")
-                .replace("{player}", player.getName())
-                .replace("{amount}", String.valueOf(crateItem.getItemStack().getAmount()))
-                .replace("{name}", (itemMeta != null && itemMeta.hasDisplayName()) ? name : itemStack.getType().name());
-
-            String subTitle = strixCrates.getConfig().getString("earn_item.titles.subtitle")
-                .replace("&", "§")
-                .replace("{player}", player.getName())
-                .replace("{amount}", String.valueOf(crateItem.getItemStack().getAmount()))
-                .replace("{name}", (itemMeta != null && itemMeta.hasDisplayName()) ? name : itemStack.getType().name());
-
-            player.sendTitle(title, subTitle);
-        }
-
-        if (strixCrates.getConfig().getBoolean("earn_item.messages.enable")) {
-            ItemStack itemStack = crateItem.getItemStack();
-            ItemMeta itemMeta = itemStack.getItemMeta();
-
-            String name = ChatColor.stripColor(crateItem.getItemStack().getItemMeta().getDisplayName());
-
-            String message = strixCrates.getConfig().getString("earn_item.messages.message")
-                .replace("&", "§")
-                .replace("{player}", player.getName())
-                .replace("{amount}", String.valueOf(crateItem.getItemStack().getAmount()))
-                .replace("{name}", (itemMeta != null && itemMeta.hasDisplayName()) ? name : itemStack.getType().name());
-
-            player.sendMessage(message);
-        }
-    }
-
-    public boolean checkIfInventoryIsFull(Player player) {
-        return player.getInventory().firstEmpty() == -1;
     }
 
 }

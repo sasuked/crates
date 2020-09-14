@@ -1,11 +1,12 @@
 package net.stoonegomes.crates.builder;
 
+import com.google.common.collect.Lists;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,29 +25,32 @@ public class ItemBuilder {
         this.itemMeta = itemStack.getItemMeta();
     }
 
-    public ItemBuilder name(boolean traduce, String name) {
-        itemMeta.setDisplayName(traduce ? name.replace("&", "§") : name);
+    public ItemBuilder name(String name) {
+        itemMeta.setDisplayName(name);
         itemStack.setItemMeta(itemMeta);
 
         return this;
     }
 
-    public ItemBuilder lore(boolean traduce, List<String> lore) {
-        if (traduce) {
-            List<String> list = new ArrayList<>();
-            for (String string : lore) list.add(string.replace("&", "§"));
-
-            itemMeta.setLore(list);
-        } else {
-            itemMeta.setLore(lore);
-        }
+    public ItemBuilder lore(String... lore) {
+        itemMeta.setLore(Lists.newArrayList(lore));
         itemStack.setItemMeta(itemMeta);
 
         return this;
     }
 
-    public ItemBuilder lore(boolean traduce, String... lore) {
-        lore(traduce, Arrays.asList(lore));
+    public ItemBuilder lore(List<String> lore) {
+        itemMeta.setLore(lore);
+        itemStack.setItemMeta(itemMeta);
+
+        return this;
+    }
+
+    public ItemBuilder addLore(String... lore) {
+        List<String> actualLore = itemMeta.getLore();
+        actualLore.addAll(Arrays.asList(lore));
+        itemMeta.setLore(actualLore);
+        itemStack.setItemMeta(itemMeta);
 
         return this;
     }
@@ -57,6 +61,14 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder owner(String owner) {
+        SkullMeta skullMeta = (SkullMeta) itemMeta;
+        skullMeta.setOwner(owner);
+
+        itemStack.setItemMeta(skullMeta);
+
+        return this;
+    }
 
     public ItemBuilder enchantment(Enchantment enchantment, int value) {
         itemStack.addUnsafeEnchantment(enchantment, value);
